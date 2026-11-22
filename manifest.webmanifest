@@ -1,0 +1,11 @@
+{
+  "name": "Niko Live Commander — Régie mobile TikTok",
+  "short_name": "Niko Live",
+  "description": "Conducteur, setlist, minuterie et check-list hors ligne. Aucun contrôle privé TikTok simulé.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080e18",
+  "theme_color": "#08121e",
+  "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]
+}
