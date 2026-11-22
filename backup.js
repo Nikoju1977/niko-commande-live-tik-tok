@@ -35,7 +35,7 @@
     if(time&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))throw Error('Heure de Miami invalide.');
     const cue=data.cue??'INTRO';
     if(!ALLOWED_CUES.has(cue))throw Error('Cue inconnu.');
-    const elapsed=nonnegative(data.elapsed??0,'Chronomètre');
+    const elapsed=nonnegative(data.elapsed===undefined?0:data.elapsed,'Chronomètre');
     if(!data.checks||typeof data.checks!=='object'||Array.isArray(data.checks))
       throw Error('Check-list invalide.');
     const checks={};
