@@ -28,3 +28,14 @@ Le dépôt peut être servi sur un hébergeur statique HTTPS (GitHub Pages, Verc
 ## Statut
 
 Créé le 22 novembre 2026 à partir d'un dépôt vide. **Code enregistré ; tests navigateur, iPhone et déploiement public non confirmés.**
+
+## Sécurisation de l'import — 22 novembre 2026
+
+Le bouton **Importer JSON** est désormais une commande tactile et clavier. Le JSON est entièrement vérifié **avant toute modification** du conducteur existant (titre, notes, heure, BPM, check-list, durée et setlist). Un récapitulatif s'affiche et une confirmation explicite est nécessaire car l'import **remplace** les données locales. En cas d'annulation, de JSON invalide ou d'échec du stockage local, le conducteur précédent est conservé.
+
+- Exports d'origine **sans champ `format`** toujours reconnus ; les nouveaux exports ajoutent `format: niko-live-commander-backup-v1`.
+- Le chronomètre importé reste à l'arrêt, sans reprise automatique d'un ancien direct ; limite 1 Mo et 1 000 éléments.
+- Le premier chargement de la PWA inclut désormais `backup.js` avec cache `niko-live-commander-v2-safe-import`.
+- `node --test tests/backup.test.cjs` et `node tests/browser-smoke.cjs` sont exécutés par GitHub Actions. Le test Chromium utilise un serveur local, n'envoie aucune session sur un réseau social et n'est **pas** un essai sur iPhone physique.
+
+La disponibilité HTTP 200 d'un domaine ne prouve pas la fiabilité des commandes de diffusion : l'application reste une régie de préparation autonome.

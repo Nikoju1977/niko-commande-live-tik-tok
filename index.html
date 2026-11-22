@@ -95,12 +95,13 @@ footer{margin:22px 0 0;color:var(--dim);font-size:12px}
 </section>
 <section class="panel wide">
 <h2>Sauvegarde et transfert</h2><p class="small">Export JSON local ou import volontaire d'un conducteur existant. Aucun serveur de synchronisation, aucun accès privé TikTok.</p>
-<div class="actions"><button class="btn primary" id="export">Exporter JSON</button><label for="importFile" class="btn" style="cursor:pointer;color:#f4faff;margin:0">Importer JSON</label><input type="file" id="importFile" accept=".json,application/json" class="visually-hidden"><button class="btn warn" id="clearAll">Effacer les données locales</button></div>
+<div class="actions"><button class="btn primary" id="export">Exporter JSON</button><button class="btn" type="button" id="importTrigger">Importer JSON</button><input type="file" id="importFile" accept=".json,application/json" class="visually-hidden" aria-label="Choisir une sauvegarde Niko Live Commander"><button class="btn warn" id="clearAll">Effacer les données locales</button></div>
 </section>
 </main>
 <footer>Régie autonome pour PC, Android et iPhone. Aucune fonction d'API TikTok LIVE, de contrôle OBS distant, d'écoute audio ou de diffusion vidéo n'est simulée. Les commandes réelles nécessitent des logiciels, autorisations et connexions adaptés.</footer>
 </div>
 <div id="notice" role="status" aria-live="polite"></div>
+<script src="./backup.js"></script>
 <script>
 (function(){
 'use strict';
@@ -119,7 +120,7 @@ function fresh(){return{title:'Live DJ — Angie Be',date:'',time:'',notes:'',ch
 function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||'null');return v&&typeof v==='object'&&Array.isArray(v.setlist)?Object.assign(fresh(),v):fresh();}catch(e){return fresh();}}
 let state=load();let notifyTimer;
 function toast(message){const n=$('notice');n.textContent=message;n.style.display='block';clearTimeout(notifyTimer);notifyTimer=setTimeout(()=>n.style.display='none',3400);}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){toast('Stockage indisponible : utilise Exporter JSON.');}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));return true;}catch(e){toast('Stockage indisponible : utilise Exporter JSON.');return false;}}
 function pad(n){return String(n).padStart(2,'0');}
 function elapsedMs(){return state.elapsed+(state.runningSince?Math.max(0,Date.now()-state.runningSince):0);}
 function timerText(){const n=Math.floor(elapsedMs()/1000);return pad(Math.floor(n/3600))+':'+pad(Math.floor(n%3600/60))+':'+pad(n%60);}
@@ -147,12 +148,25 @@ $('start').onclick=()=>{if(!state.runningSince){state.runningSince=Date.now();sa
 $('pause').onclick=()=>{if(state.runningSince){state.elapsed=elapsedMs();state.runningSince=null;save();renderTimer();}};
 $('reset').onclick=()=>{state.elapsed=0;state.runningSince=null;save();renderTimer();};
 document.querySelectorAll('[data-cue]').forEach(b=>b.onclick=()=>{state.cue=b.dataset.cue;save();renderTimer();});
-$('setForm').onsubmit=e=>{e.preventDefault();const name=$('track').value.trim();if(!name)return;const raw=$('bpm').value;const bpm=raw?Number(raw):null;if(bpm!==null&&(!Number.isFinite(bpm)||bpm<40||bpm>250)){toast('BPM : 40 à 250.');return;}state.setlist.push({name,bpm});$('track').value='';$('bpm').value='';save();renderSetlist();};
+$('setForm').onsubmit=e=>{e.preventDefault();const name=$('track').value.trim();if(!name)return;const raw=$('bpm').value;const bpm=raw?Number(raw):null;if(bpm!==null&&(!Number.isFinite(bpm)||bpm<40||bpm>250)){toast('BPM : 40 à 250.');return;}if(state.setlist.length>=window.LiveCommanderBackup.MAX_TRACKS){toast('Limite de 1 000 éléments dans la setlist.');return;}state.setlist.push({name,bpm});$('track').value='';$('bpm').value='';save();renderSetlist();};
 $('resetChecks').onclick=()=>{if(!confirm('Réinitialiser la check-list ?'))return;state.checks={};save();renderChecklist();};
 $('copySummary').onclick=copy;
 $('shareSummary').onclick=async()=>{const text=report();if(navigator.share){try{await navigator.share({title:state.title,text});return;}catch(e){if(e.name==='AbortError')return;}}await copy();};
-$('export').onclick=()=>download('niko-live-commander.json',JSON.stringify(Object.assign({},state,{elapsed:elapsedMs(),runningSince:null}),null,2),'application/json');
-$('importFile').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{if(f.size>1000000)throw Error('Fichier trop volumineux');const data=JSON.parse(await f.text());if(!data||!Array.isArray(data.setlist)||typeof data.title!=='string'||data.setlist.length>1000)throw Error('Format invalide');state=Object.assign(fresh(),data);state.runningSince=null;state.elapsed=Math.max(0,Number(state.elapsed)||0);state.setlist=state.setlist.filter(x=>x&&typeof x.name==='string'&&x.name.length<=130&&(!x.bpm||(x.bpm>=40&&x.bpm<=250)));state.checks=state.checks&&typeof state.checks==='object'?state.checks:{};save();location.reload();}catch(error){toast('Import refusé : '+error.message);}finally{e.target.value='';}};
+$('export').onclick=()=>download('niko-live-commander.json',JSON.stringify(Object.assign({format:'niko-live-commander-backup-v1'},state,{elapsed:elapsedMs(),runningSince:null}),null,2),'application/json');
+$('importTrigger').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{
+ const file=e.target.files?.[0];e.target.value='';if(!file)return;
+ try{
+  if(!window.LiveCommanderBackup)throw Error('Module de restauration indisponible.');
+  if(file.size>window.LiveCommanderBackup.MAX_BYTES)throw Error('Sauvegarde trop volumineuse (1 Mo maximum).');
+  const restored=window.LiveCommanderBackup.parse(await file.text());
+  const summary=restored.setlist.length+' élément(s) de setlist, '+Object.values(restored.checks).filter(Boolean).length+' case(s) cochée(s)';
+  if(!confirm('Remplacer le conducteur et la setlist actuels par la sauvegarde sélectionnée ?\n'+summary+'\nExportez d’abord votre conducteur actuel si vous voulez le conserver.')){toast('Import annulé. Le conducteur actuel est conservé.');return;}
+  const previous=state;state=restored;
+  if(!save()){state=previous;toast('Import refusé : impossible de sauvegarder le conducteur.');return;}
+  location.reload();
+ }catch(error){toast('Import refusé : '+(error?.message||'fichier invalide'));}
+};
 $('clearAll').onclick=()=>{if(!confirm('Effacer toutes les données de cette régie ?'))return;state=fresh();try{localStorage.removeItem(KEY);}catch(e){}location.reload();};
 }
 bind();renderClocks();renderChecklist();renderSetlist();renderTimer();setInterval(()=>{renderClocks();renderTimer();},1000);

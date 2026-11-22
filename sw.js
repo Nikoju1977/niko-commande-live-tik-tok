@@ -1,6 +1,6 @@
 /* Niko Live Commander — cache local PWA, network-first pour les mises à jour. */
-const CACHE='niko-live-commander-v1';
-const SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg'];
+const CACHE='niko-live-commander-v2-safe-import';
+const SHELL=['./','./index.html','./backup.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
 });
