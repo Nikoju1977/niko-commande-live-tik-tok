@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08121e">
+<meta name="description" content="Régie mobile locale pour préparer et piloter le conducteur d'un live TikTok : minuteur, setlist, check-list et exports.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<title>Niko Live Commander — Régie TikTok</title>
+<style>
+:root{color-scheme:dark;--bg:#080e18;--panel:#111d2d;--line:#294057;--fg:#edf8ff;--dim:#a5bbcf;--cyan:#69e0d5;--gold:#efc482;--danger:#ff818e}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 85% -10%,#14395b 0,transparent 38%),var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.5}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+a{color:var(--cyan)}
+.wrap{max-width:1150px;padding:20px clamp(12px,3vw,30px) max(30px,env(safe-area-inset-bottom));margin:auto}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-bottom:17px}
+.brand{flex:1}
+.brand small{color:var(--cyan);text-transform:uppercase;letter-spacing:.19em;font-size:11px}
+h1{font-size:clamp(22px,3.6vw,35px);margin:0;font-weight:850;letter-spacing:-.035em}
+.lead{color:var(--dim);margin:5px 0 12px}
+.clockbar{display:flex;gap:8px;flex-wrap:wrap}
+.clockbar span{background:#14273b;border:1px solid var(--line);padding:8px 11px;border-radius:9px;font-size:12px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:15px}
+.panel{padding:17px;background:linear-gradient(150deg,#142236,#0e1929);border:1px solid var(--line);border-radius:17px;min-width:0}
+.panel.wide{grid-column:1/-1}
+h2{font-size:17px;margin:0 0 12px}
+label{color:var(--dim);font-size:13px;display:block;margin-bottom:5px}
+.field{width:100%;border:1px solid #476078;background:#091723;border-radius:9px;color:#fff;padding:11px;min-height:44px}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.full{grid-column:1/-1}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.btn{padding:10px 14px;border-radius:10px;border:1px solid #43627b;color:#f4faff;background:#1a3249;min-height:44px;font-weight:700}
+.btn.primary{background:#077d83;border-color:#39c3c7;color:#fff}
+.btn.warn{background:#5a222c;border-color:#a45563}
+.btn.tiny{min-width:44px;padding:7px 10px}
+.timer{font:700 clamp(38px,8vw,64px)/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--cyan);font-variant-numeric:tabular-nums;letter-spacing:.03em;margin:7px 0 13px}
+.status{display:inline-block;padding:5px 10px;border:1px solid #5e7282;border-radius:9px;font-size:12px;color:var(--gold)}
+.status.live{border-color:#42d9bd;color:#91ffe2}
+.items{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;gap:9px;padding:10px;background:#0b1927;border:1px solid #2d4960;border-radius:11px}
+.item .body{flex:1;min-width:0}
+.item b{display:block;overflow-wrap:anywhere}
+.item small{color:var(--dim)}
+.rowform{display:flex;gap:8px;flex-wrap:wrap}
+.rowform .field{flex:1;min-width:150px}
+.checkline{display:flex;align-items:center;gap:10px;padding:10px;background:#0a1927;border-radius:9px;border:1px solid #27415a;margin:6px 0;cursor:pointer}
+.checkline input{width:22px;height:22px;accent-color:var(--cyan);flex:none}
+.checkline span{flex:1}
+.small{font-size:12px;color:var(--dim)}
+#notice{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);padding:11px 16px;max-width:calc(100vw - 24px);background:#0c3d42;color:#ddfffa;border:1px solid #35b7b3;border-radius:12px;z-index:10;display:none;box-shadow:0 16px 40px #000a}
+.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+textarea.field{min-height:95px;resize:vertical}
+#cueText{color:var(--gold);font-weight:750}
+footer{margin:22px 0 0;color:var(--dim);font-size:12px}
+@media(max-width:740px){.layout{grid-template-columns:1fr}.panel.wide{grid-column:1}.form-grid{grid-template-columns:1fr}.full{grid-column:1}.clockbar{width:100%}.item{flex-wrap:wrap}.timer{font-size:clamp(38px,12vw,62px)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="brand"><small>Studio Niko · Régie mobile locale</small><h1>NIKO LIVE COMMANDER</h1><p class="lead">Prépare tes lives, garde le tempo et transmets un conducteur clair — sans compte ni API.</p></div><div class="clockbar"><span id="parisClock">France —</span><span id="miamiClock">Miami —</span></div></header>
+<main class="layout">
+<section class="panel">
+<h2>Mission live</h2>
+<div class="form-grid"><div class="full"><label for="title">Titre de la session</label><input id="title" class="field" maxlength="120" placeholder="Live DJ — Angie Be"></div><div><label for="date">Date du live</label><input id="date" class="field" type="date"></div><div><label for="time">Heure de Miami</label><input id="time" class="field" type="time"></div><div class="full"><label for="notes">Notes régie</label><textarea id="notes" class="field" maxlength="4000" placeholder="Lieu, responsable audio, liens publics autorisés, consignes..."></textarea></div></div>
+<div class="actions"><button class="btn" id="copySummary">Copier le conducteur</button><button class="btn primary" id="shareSummary">Partager</button></div>
+<p class="small">Toutes les données de cette régie sont enregistrées sur cet appareil. Le partage demande ton action explicite.</p>
+</section>
+<section class="panel">
+<h2>Chronomètre live</h2>
+<div id="timer" class="timer" role="timer" aria-label="Temps écoulé">00:00:00</div><span id="liveStatus" class="status">EN PRÉPARATION</span>
+<div class="actions"><button id="start" class="btn primary">Démarrer</button><button id="pause" class="btn">Pause</button><button id="reset" class="btn warn">Réinitialiser</button></div>
+<h2 style="margin-top:20px">Cue régie</h2>
+<p id="cueText">Prêt pour le lancement.</p>
+<div class="actions"><button class="btn" data-cue="INTRO">INTRO</button><button class="btn" data-cue="MIX">MIX</button><button class="btn" data-cue="PAUSE">PAUSE</button><button class="btn" data-cue="FIN">FIN</button></div>
+<p class="small">Le chronomètre ne contrôle pas TikTok, OBS ou le matériel DJ.</p>
+</section>
+<section class="panel">
+<h2>Check-list avant direct</h2>
+<div id="checklist"></div>
+<div class="actions"><button class="btn" id="resetChecks">Réinitialiser la check-list</button></div>
+<p class="small">Prévu pour l'audio DJ/iRig, la caméra, les niveaux sonores et le réseau. Vérifie les appareils physiquement.</p>
+</section>
+<section class="panel">
+<h2>Conducteur / Setlist</h2>
+<form id="setForm" class="rowform"><label class="visually-hidden" for="track">Titre / action</label><input id="track" class="field" maxlength="130" placeholder="Titre / action / transition" required><label class="visually-hidden" for="bpm">BPM</label><input id="bpm" class="field" inputmode="numeric" type="number" min="40" max="250" placeholder="BPM" style="max-width:100px"><button class="btn primary" type="submit">Ajouter</button></form>
+<div id="setlist" class="items" style="margin-top:12px"></div>
+<p class="small">Les flèches déplacent les éléments. La liste reste privée et ne remplace pas la bibliothèque musicale.</p>
+</section>
+<section class="panel wide">
+<h2>Sauvegarde et transfert</h2><p class="small">Export JSON local ou import volontaire d'un conducteur existant. Aucun serveur de synchronisation, aucun accès privé TikTok.</p>
+<div class="actions"><button class="btn primary" id="export">Exporter JSON</button><label for="importFile" class="btn" style="cursor:pointer;color:#f4faff;margin:0">Importer JSON</label><input type="file" id="importFile" accept=".json,application/json" class="visually-hidden"><button class="btn warn" id="clearAll">Effacer les données locales</button></div>
+</section>
+</main>
+<footer>Régie autonome pour PC, Android et iPhone. Aucune fonction d'API TikTok LIVE, de contrôle OBS distant, d'écoute audio ou de diffusion vidéo n'est simulée. Les commandes réelles nécessitent des logiciels, autorisations et connexions adaptés.</footer>
+</div>
+<div id="notice" role="status" aria-live="polite"></div>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const KEY='niko-live-commander-local-v1';
+const tasks=[
+['audio','Sortie BOOTH de la table DJ vers l’iRig : niveau contrôlé'],
+['micro','Micro HF branché et contrôlé sur le retour TikTok'],
+['mix','Musique et voix équilibrées sans saturation'],
+['camera','Caméra et éclairage cadrés, batterie/alimentation branchée'],
+['network','Réseau stable et permissions de l’application vérifiées'],
+['rights','Droits de diffusion et consentement des personnes vérifiés'],
+['safety','Scène de secours et procédure de coupure préparées']
+];
+function fresh(){return{title:'Live DJ — Angie Be',date:'',time:'',notes:'',checks:{},setlist:[],cue:'INTRO',elapsed:0,runningSince:null};}
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY)||'null');return v&&typeof v==='object'&&Array.isArray(v.setlist)?Object.assign(fresh(),v):fresh();}catch(e){return fresh();}}
+let state=load();let notifyTimer;
+function toast(message){const n=$('notice');n.textContent=message;n.style.display='block';clearTimeout(notifyTimer);notifyTimer=setTimeout(()=>n.style.display='none',3400);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){toast('Stockage indisponible : utilise Exporter JSON.');}}
+function pad(n){return String(n).padStart(2,'0');}
+function elapsedMs(){return state.elapsed+(state.runningSince?Math.max(0,Date.now()-state.runningSince):0);}
+function timerText(){const n=Math.floor(elapsedMs()/1000);return pad(Math.floor(n/3600))+':'+pad(Math.floor(n%3600/60))+':'+pad(n%60);}
+function renderTimer(){$('timer').textContent=timerText();$('liveStatus').textContent=state.runningSince?'EN DIRECT (MINUTEUR)':'EN PRÉPARATION / PAUSE';$('liveStatus').classList.toggle('live',Boolean(state.runningSince));$('cueText').textContent='Cue : '+state.cue;}
+function clock(tz){return new Intl.DateTimeFormat('fr-FR',{timeZone:tz,weekday:'short',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date());}
+function renderClocks(){$('parisClock').textContent='France · '+clock('Europe/Paris');$('miamiClock').textContent='Miami · '+clock('America/New_York');}
+function renderChecklist(){const box=$('checklist');box.replaceChildren();for(const [id,txt] of tasks){const l=document.createElement('label');l.className='checkline';const c=document.createElement('input');c.type='checkbox';c.checked=Boolean(state.checks[id]);c.onchange=()=>{state.checks[id]=c.checked;save()};const sp=document.createElement('span');sp.textContent=txt;l.append(c,sp);box.append(l);}}
+function action(text,fn,kind){const b=document.createElement('button');b.type='button';b.textContent=text;b.className='btn tiny'+(kind?' warn':'');b.onclick=fn;return b;}
+function renderSetlist(){const node=$('setlist');node.replaceChildren();state.setlist.forEach((item,i)=>{const row=document.createElement('div');row.className='item';const num=document.createElement('span');num.textContent=pad(i+1);num.className='small';const body=document.createElement('div');body.className='body';const b=document.createElement('b');b.textContent=item.name;const small=document.createElement('small');small.textContent=item.bpm?item.bpm+' BPM':'Transition / note';body.append(b,small);const up=action('↑',()=>move(i,-1));up.setAttribute('aria-label','Monter '+item.name);up.disabled=i===0;const down=action('↓',()=>move(i,1));down.setAttribute('aria-label','Descendre '+item.name);down.disabled=i===state.setlist.length-1;const del=action('×',()=>{state.setlist.splice(i,1);save();renderSetlist();},true);del.setAttribute('aria-label','Supprimer '+item.name);row.append(num,body,up,down,del);node.append(row);});if(!state.setlist.length){const p=document.createElement('p');p.className='small';p.textContent='Aucun titre ou cue ajouté.';node.append(p);}}
+function move(i,delta){const j=i+delta;if(j<0||j>=state.setlist.length)return;const a=state.setlist.splice(i,1)[0];state.setlist.splice(j,0,a);save();renderSetlist();}
+function report(){return [
+'NIKO LIVE COMMANDER — CONDUCTEUR',state.title||'Sans titre','Date : '+(state.date||'à définir')+' · Miami : '+(state.time||'à définir'),
+'Régie France : '+clock('Europe/Paris'),'Régie Miami : '+clock('America/New_York'),
+'Cue : '+state.cue+' · Temps : '+timerText(),'',
+'CHECK-LIST',...tasks.map(t=>(state.checks[t[0]]?'[OK] ':'[  ] ')+t[1]),'',
+'SETLIST',...state.setlist.map((t,i)=>pad(i+1)+'. '+t.name+(t.bpm?' ('+t.bpm+' BPM)':'')),'',
+'NOTES',state.notes||'—'
+].join('\n');}
+async function copy(){const str=report();try{if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(str);toast('Conducteur copié.');}else throw Error('clipboard absent');}catch(e){const t=document.createElement('textarea');t.value=str;document.body.append(t);t.select();try{document.execCommand('copy');toast('Copie préparée.');}catch(err){toast('Copie indisponible : utilise Exporter JSON.');}t.remove();}}
+function download(name,data,type){const url=URL.createObjectURL(new Blob([data],{type}));const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);}
+function bind(){
+$('title').value=state.title;$('date').value=state.date;$('time').value=state.time;$('notes').value=state.notes;
+for(const id of ['title','date','time','notes'])$(id).addEventListener('input',()=>{state[id]=$(id).value;save();});
+$('start').onclick=()=>{if(!state.runningSince){state.runningSince=Date.now();save();renderTimer();}};
+$('pause').onclick=()=>{if(state.runningSince){state.elapsed=elapsedMs();state.runningSince=null;save();renderTimer();}};
+$('reset').onclick=()=>{state.elapsed=0;state.runningSince=null;save();renderTimer();};
+document.querySelectorAll('[data-cue]').forEach(b=>b.onclick=()=>{state.cue=b.dataset.cue;save();renderTimer();});
+$('setForm').onsubmit=e=>{e.preventDefault();const name=$('track').value.trim();if(!name)return;const raw=$('bpm').value;const bpm=raw?Number(raw):null;if(bpm!==null&&(!Number.isFinite(bpm)||bpm<40||bpm>250)){toast('BPM : 40 à 250.');return;}state.setlist.push({name,bpm});$('track').value='';$('bpm').value='';save();renderSetlist();};
+$('resetChecks').onclick=()=>{if(!confirm('Réinitialiser la check-list ?'))return;state.checks={};save();renderChecklist();};
+$('copySummary').onclick=copy;
+$('shareSummary').onclick=async()=>{const text=report();if(navigator.share){try{await navigator.share({title:state.title,text});return;}catch(e){if(e.name==='AbortError')return;}}await copy();};
+$('export').onclick=()=>download('niko-live-commander.json',JSON.stringify(Object.assign({},state,{elapsed:elapsedMs(),runningSince:null}),null,2),'application/json');
+$('importFile').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{if(f.size>1000000)throw Error('Fichier trop volumineux');const data=JSON.parse(await f.text());if(!data||!Array.isArray(data.setlist)||typeof data.title!=='string'||data.setlist.length>1000)throw Error('Format invalide');state=Object.assign(fresh(),data);state.runningSince=null;state.elapsed=Math.max(0,Number(state.elapsed)||0);state.setlist=state.setlist.filter(x=>x&&typeof x.name==='string'&&x.name.length<=130&&(!x.bpm||(x.bpm>=40&&x.bpm<=250)));state.checks=state.checks&&typeof state.checks==='object'?state.checks:{};save();location.reload();}catch(error){toast('Import refusé : '+error.message);}finally{e.target.value='';}};
+$('clearAll').onclick=()=>{if(!confirm('Effacer toutes les données de cette régie ?'))return;state=fresh();try{localStorage.removeItem(KEY);}catch(e){}location.reload();};
+}
+bind();renderClocks();renderChecklist();renderSetlist();renderTimer();setInterval(()=>{renderClocks();renderTimer();},1000);
+if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
