@@ -1,4 +1,31 @@
-# Niko Live Commander — Régie mobile TikTok
+# Niko Live Commander — Studio Niko Design
+
+**Local-first mobile show rundown · DJ preparation · Portable session backup**
+
+[![UI](https://img.shields.io/badge/UI-Vanilla_JS-blue)](index.html) [![License](https://img.shields.io/badge/license-restricted-lightgrey)](LICENSE.md)
+
+[English overview](#english-overview) · [Portfolio](https://github.com/Nikoju1977)
+
+## Architecture
+
+```mermaid
+flowchart LR
+ A[Show rundown and setlist] --> B[Local browser state]
+ C[Clock and elapsed timer] --> B
+ B --> D[LocalStorage]
+ B --> E[JSON export and voluntary sharing]
+ F[Imported JSON] --> G[Schema checks and confirmation]
+ G --> B
+```
+
+| Source | Fonction |
+| --- | --- |
+| [index.html](index.html) | Conducteur, horloges, chronomètre, cues et partage |
+| [backup.js](backup.js) | Validation des sauvegardes |
+| [sw.js](sw.js) | Cache du shell applicatif |
+| [manifest.webmanifest](manifest.webmanifest) | Métadonnées PWA |
+
+Les horloges utilisent les fuseaux IANA via Intl.DateTimeFormat ; le chronomètre utilise l'heure du poste, qui peut être modifiée. Aucun retour de télémétrie audio ou vidéo n'est mesuré par ces fonctions.
 
 PWA locale conçue pour préparer les lives et conserver un conducteur de session sur **ordinateur, iPhone et Android**, sans serveur ni compte.
 
@@ -39,3 +66,18 @@ Le bouton **Importer JSON** est désormais une commande tactile et clavier. Le J
 - `node --test tests/backup.test.cjs` et `node tests/browser-smoke.cjs` sont exécutés par GitHub Actions. Le test Chromium utilise un serveur local, n'envoie aucune session sur un réseau social et n'est **pas** un essai sur iPhone physique.
 
 La disponibilité HTTP 200 d'un domaine ne prouve pas la fiabilité des commandes de diffusion : l'application reste une régie de préparation autonome.
+
+
+## Démarrage et qualification proposée
+
+Servir le dépôt avec `python3 -m http.server 8000`, puis ouvrir http://localhost:8000/. Le code d'enregistrement du service worker exige ici HTTPS : ne pas déduire que le cache PWA est actif sur ce serveur HTTP.
+
+Avec un conducteur fictif, vérifier les horloges, la reprise du chronomètre, l'ordre des titres, l'annulation d'un import et le rejet d'une sauvegarde invalide. Tester l'installation sur les appareils cibles via HTTPS. Les exports et le stockage local ne sont pas chiffrés. Aucun nouveau test ni déploiement n'a été exécuté pour cette révision.
+
+## English overview
+
+Niko Live Commander is a standalone browser-based preparation tool for DJ live sessions. It provides a rundown, time-zone clocks, timer, cues, a checklist, setlist, local persistence and validated JSON import. It does not broadcast, control TikTok or OBS, measure audio or synchronize devices. Native sharing and offline installation depend on browser support. No new runtime or production validation was performed.
+
+## Licence
+
+[LICENSE.md](LICENSE.md) : droits réservés pour les contributions originales concernées ; la publication ne constitue pas une licence open source. Aucun changement de licence.
